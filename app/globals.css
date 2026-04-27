@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens for Fodci light theme design: White, Green, and Shades of Green */
+  --background: oklch(1 0 0); /* White */
+  --foreground: oklch(0.2 0.05 140); /* Very Dark Green for text */
+  --card: oklch(1 0 0); /* White card background */
+  --card-foreground: oklch(0.2 0.05 140); /* Very Dark Green for card text */
+  --popover: oklch(1 0 0); /* White popover background */
+  --popover-foreground: oklch(0.2 0.05 140); /* Very Dark Green for popover text */
+  
+  /* Primary color: A vibrant green */
+  --primary: oklch(0.5 0.15 140); /* Medium Green */
+  --primary-foreground: oklch(1 0 0); /* White text on primary */
+  
+  /* Secondary color: A lighter, more subtle green shade */
+  --secondary: oklch(0.8 0.05 140); /* Light Green */
+  --secondary-foreground: oklch(0.2 0.05 140); /* Very Dark Green text on secondary */
+  
+  /* Accent color: A slightly different shade of green for contrast/highlights */
+  --accent: oklch(0.6 0.1 160); /* Teal-Green Accent */
+  --accent-foreground: oklch(1 0 0); /* White text on accent */
+  
+  /* Muted colors: Light gray/green for subtle elements */
+  --muted: oklch(0.95 0.01 140); /* Very Light Green/Gray */
+  --muted-foreground: oklch(0.4 0.05 140); /* Medium Dark Green */
+  
+  /* Destructive color: Red (kept for standard UI convention) */
+  --destructive: oklch(0.55 0.2 15); /* Red */
+  --destructive-foreground: oklch(1 0 0); /* White text on destructive */
+  
+  /* Border and Input colors */
+  --border: oklch(0.9 0.02 140); /* Light Greenish Border */
+  --input: oklch(1 0 0); /* White input background */
+  --ring: oklch(0.5 0.15 140); /* Medium Green focus ring */
+  
+  /* Chart colors (shades of green) */
+  --chart-1: oklch(0.5 0.15 140); /* Medium Green (Primary) */
+  --chart-2: oklch(0.6 0.1 160); /* Teal-Green (Accent) */
+  --chart-3: oklch(0.7 0.08 120); /* Yellow-Green */
+  --chart-4: oklch(0.4 0.18 140); /* Darker Green */
+  --chart-5: oklch(0.8 0.05 140); /* Light Green (Secondary) */
+  
+  --radius: 0.5rem;
+  
+  /* Sidebar colors (assuming a light theme sidebar) */
+  --sidebar: oklch(0.98 0 0); /* Off-White Sidebar background */
+  --sidebar-foreground: oklch(0.2 0.05 140); /* Very Dark Green for sidebar text */
+  --sidebar-primary: oklch(0.5 0.15 140); /* Medium Green */
+  --sidebar-primary-foreground: oklch(1 0 0); /* White text on primary */
+  --sidebar-accent: oklch(0.8 0.05 140); /* Light Green */
+  --sidebar-accent-foreground: oklch(0.2 0.05 140); /* Very Dark Green text on accent */
+  --sidebar-border: oklch(0.9 0.02 140); /* Light Greenish Border */
+  --sidebar-ring: oklch(0.5 0.15 140); /* Medium Green focus ring */
+}
+
+.dark {
+  /* Since the user requested a white/green scheme, we will make the dark theme an inversion of the light theme, 
+     but since the original was dark-first, we will ensure the light theme is the default. 
+     For now, we will set the dark theme to match the light theme to ensure consistency across all pages, 
+     as the request was to change "All the pages" to the new scheme. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.2 0.05 140);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.05 140);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.05 140);
+  --primary: oklch(0.5 0.15 140);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.8 0.05 140);
+  --secondary-foreground: oklch(0.2 0.05 140);
+  --muted: oklch(0.95 0.01 140);
+  --muted-foreground: oklch(0.4 0.05 140);
+  --accent: oklch(0.6 0.1 160);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.55 0.2 15);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.02 140);
+  --input: oklch(1 0 0);
+  --ring: oklch(0.5 0.15 140);
+  --chart-1: oklch(0.5 0.15 140);
+  --chart-2: oklch(0.6 0.1 160);
+  --chart-3: oklch(0.7 0.08 120);
+  --chart-4: oklch(0.4 0.18 140);
+  --chart-5: oklch(0.8 0.05 140);
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.2 0.05 140);
+  --sidebar-primary: oklch(0.5 0.15 140);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.8 0.05 140);
+  --sidebar-accent-foreground: oklch(0.2 0.05 140);
+  --sidebar-border: oklch(0.9 0.02 140);
+  --sidebar-ring: oklch(0.5 0.15 140);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
