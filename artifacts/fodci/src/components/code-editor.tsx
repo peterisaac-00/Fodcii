@@ -4,12 +4,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
 import { Play, Send } from "lucide-react"
 
+interface SubmitResult {
+  success: boolean
+  message?: string
+  passedTests?: number
+  totalTests?: number
+}
+
 interface CodeEditorProps {
   language: string
   initialCode?: string
   problemId: number
   onRun?: (code: string) => void
-  onSubmit?: (code: string) => void
+  onSubmit?: (code: string, result: SubmitResult) => void
 }
 
 const languageTemplates: Record<string, string> = {
@@ -70,11 +77,12 @@ export function CodeEditor({ language, initialCode, problemId, onRun, onSubmit }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, language, problemId }),
       })
-      const result = await response.json()
+      const result: SubmitResult & { message?: string } = await response.json()
       setOutput(result.message || "Solution submitted successfully")
-      onSubmit?.(code)
+      onSubmit?.(code, result)
     } catch {
       setOutput("Error submitting solution")
+      onSubmit?.(code, { success: false })
     } finally {
       setIsSubmitting(false)
     }
