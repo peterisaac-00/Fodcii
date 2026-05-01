@@ -50,7 +50,7 @@ export default function ProblemDetailPage() {
     timerRef.current?.pause()
 
     try {
-      const response = await fetch("/api/checkAnswer", {
+      const response = await fetch("/api/code/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, problemId: mockProblem.id, language: selectedLanguage }),
@@ -59,13 +59,13 @@ export default function ProblemDetailPage() {
       if (!response.ok) throw new Error(`Server error: ${response.status}`)
       const result = await response.json()
 
-      if (result.correct) {
+      if (result.success) {
         timerRef.current?.stopFinal()
       } else {
         timerRef.current?.resume()
       }
     } catch {
-      // keep timer paused on network/server error
+      timerRef.current?.resume()
     }
   }
 
