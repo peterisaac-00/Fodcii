@@ -18,7 +18,7 @@ export const submitRateLimit = rateLimit({
   limit: 15,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { keyGenerator: false },
+  validate: { keyGeneratorIpFallback: false },
   keyGenerator: (req: Request) => {
     const userId = (req as Request & { user?: { sub?: number } }).user?.sub;
     return userId != null ? `user:${userId}` : (req.ip ?? "anonymous");

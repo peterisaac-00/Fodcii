@@ -73,7 +73,8 @@ if (typeof pruneTimer.unref === "function") pruneTimer.unref();
 export const TTL = {
   PROBLEMS_LIST: 120_000,
   PROBLEM_DETAIL: 300_000,
-  LEADERBOARD: 60_000,
+  LEADERBOARD: 30_000,
+  LEADERBOARD_STATS: 30_000,
 } as const;
 
 export const TAGS = {

@@ -1,148 +1,123 @@
 import { Router } from "express";
-import { db, usersTable, submissionsTable, userStatsTable, problemsTable } from "@workspace/db";
-import { desc, eq, sql, count, countDistinct } from "drizzle-orm";
+import { requireAuth } from "../middleware/auth.js";
 import { readRateLimit } from "../middleware/rate-limit.js";
+import {
+  getLeaderboard,
+  findUserStanding,
+  getDailyStats,
+} from "../services/ranking.service.js";
 
 const router = Router();
 
-function getLevel(points: number): string {
-  if (points >= 2000) return "Expert";
-  if (points >= 1500) return "Advanced";
-  if (points >= 500) return "Intermediate";
-  return "Beginner";
+function parsePositiveInt(val: unknown, defaultVal: number, max: number): number {
+  const n = parseInt(String(val), 10);
+  if (isNaN(n) || n < 0) return defaultVal;
+  return Math.min(n, max);
 }
 
 router.get("/leaderboard", readRateLimit, async (req, res) => {
   try {
-    const rows = await db
-      .select({
-        id: usersTable.id,
-        name: usersTable.username,
-        points: userStatsTable.points,
-        currentStreak: userStatsTable.currentStreak,
-      })
-      .from(usersTable)
-      .leftJoin(userStatsTable, eq(userStatsTable.userId, usersTable.id))
-      .where(sql`${usersTable.role} = 'user'`)
-      .orderBy(desc(sql`COALESCE(${userStatsTable.points}, 0)`));
+    const limit = parsePositiveInt(req.query.limit, 50, 200);
+    const offset = parsePositiveInt(req.query.offset, 0, 100_000);
 
-    const [totalProblemsResult] = await db.select({ count: count() }).from(problemsTable);
-    const totalProblems = Number(totalProblemsResult?.count ?? 0);
-
-    const [totalUsersResult] = await db
-      .select({ count: count() })
-      .from(usersTable)
-      .where(sql`${usersTable.role} = 'user'`);
-    const totalUsers = Number(totalUsersResult?.count ?? 0);
-
-    const solvedPerUser = await db
-      .select({
-        userId: submissionsTable.userId,
-        count: countDistinct(submissionsTable.problemId),
-      })
-      .from(submissionsTable)
-      .where(sql`${submissionsTable.status} = 'accepted'`)
-      .groupBy(submissionsTable.userId);
-
-    const solvedMap = new Map(solvedPerUser.map((r) => [r.userId, Number(r.count)]));
-
-    const leaderboard = rows.map((user, index) => {
-      const solved = solvedMap.get(user.id) ?? 0;
-      const points = user.points ?? 0;
-      return {
-        id: user.id,
-        rank: index + 1,
-        name: user.name,
-        avatar: "/diverse-user-avatars.png",
-        solvedProblems: solved,
-        totalProblems,
-        points,
-        streak: user.currentStreak ?? 0,
-        level: getLevel(points),
-      };
-    });
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const [[activeTodayResult], [solvedTodayResult]] = await Promise.all([
-      db
-        .select({ count: countDistinct(submissionsTable.userId) })
-        .from(submissionsTable)
-        .where(sql`${submissionsTable.createdAt} >= ${todayStart}`),
-      db
-        .select({ count: countDistinct(submissionsTable.problemId) })
-        .from(submissionsTable)
-        .where(sql`${submissionsTable.createdAt} >= ${todayStart} AND ${submissionsTable.status} = 'accepted'`),
+    const [{ entries, total }, stats] = await Promise.all([
+      getLeaderboard({ limit, offset }),
+      getDailyStats(),
     ]);
 
-    const activeToday = Number(activeTodayResult?.count ?? 0);
-    const problemsSolvedToday = Number(solvedTodayResult?.count ?? 0);
-    const totalSolved = leaderboard.reduce((sum, u) => sum + u.solvedProblems, 0);
-    const averageProblems = totalUsers > 0 ? Math.round(totalSolved / totalUsers) : 0;
+    const leaderboard = entries.map((e) => ({
+      id: e.userId,
+      rank: e.rank,
+      name: e.username,
+      avatar: "/diverse-user-avatars.png",
+      solvedProblems: e.solvedCount,
+      totalProblems: stats.totalUsers > 0 ? undefined : 0,
+      points: e.totalScore,
+      totalScore: e.totalScore,
+      solvedCount: e.solvedCount,
+      totalSubmissions: e.totalSubmissions,
+      streak: e.streak,
+      level: e.level,
+    }));
 
-    return res.json({
+    res.json({
       leaderboard,
-      stats: { totalUsers, activeToday, problemsSolvedToday, averageProblems },
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+      stats,
     });
   } catch (err: unknown) {
     const e = err as { message?: string };
-    return res.status(500).json({ error: e.message ?? "Failed to fetch leaderboard" });
+    res.status(500).json({ error: e.message ?? "Failed to fetch leaderboard" });
   }
 });
 
-router.get("/leaderboard/user/:rank", readRateLimit, async (req, res) => {
-  const rank = parseInt(req.params.rank);
-  if (isNaN(rank) || rank < 1) {
-    return res.status(400).json({ error: "Invalid rank" });
+router.get("/leaderboard/me", requireAuth, readRateLimit, async (req, res) => {
+  const userId = req.user!.sub;
+
+  try {
+    const standing = await findUserStanding(userId);
+
+    if (!standing) {
+      res.json({
+        rank: null,
+        message: "No submissions yet — make your first accepted submission to appear on the leaderboard!",
+        userId,
+      });
+      return;
+    }
+
+    res.json({
+      rank: standing.rank,
+      userId: standing.userId,
+      username: standing.username,
+      totalScore: standing.totalScore,
+      solvedCount: standing.solvedCount,
+      totalSubmissions: standing.totalSubmissions,
+      streak: standing.streak,
+      level: standing.level,
+    });
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    res.status(500).json({ error: e.message ?? "Failed to fetch ranking" });
+  }
+});
+
+router.get("/leaderboard/user/:id", readRateLimit, async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "Invalid user ID" });
+    return;
   }
 
   try {
-    const rows = await db
-      .select({
-        id: usersTable.id,
-        name: usersTable.username,
-        points: userStatsTable.points,
-        currentStreak: userStatsTable.currentStreak,
-      })
-      .from(usersTable)
-      .leftJoin(userStatsTable, eq(userStatsTable.userId, usersTable.id))
-      .where(sql`${usersTable.role} = 'user'`)
-      .orderBy(desc(sql`COALESCE(${userStatsTable.points}, 0)`));
-
-    const userRow = rows[rank - 1];
-    if (!userRow) {
-      return res.status(404).json({ error: "User not found" });
+    const standing = await findUserStanding(userId);
+    if (!standing) {
+      res.status(404).json({ error: "User not found or has no submissions" });
+      return;
     }
 
-    const [[totalProblemsResult], [solvedResult]] = await Promise.all([
-      db.select({ count: count() }).from(problemsTable),
-      db
-        .select({ count: countDistinct(submissionsTable.problemId) })
-        .from(submissionsTable)
-        .where(sql`${submissionsTable.userId} = ${userRow.id} AND ${submissionsTable.status} = 'accepted'`),
-    ]);
-
-    const totalProblems = Number(totalProblemsResult?.count ?? 0);
-    const solved = Number(solvedResult?.count ?? 0);
-    const points = userRow.points ?? 0;
-
-    return res.json({
+    res.json({
       user: {
-        id: userRow.id,
-        rank,
-        name: userRow.name,
+        id: standing.userId,
+        rank: standing.rank,
+        name: standing.username,
         avatar: "/diverse-user-avatars.png",
-        solvedProblems: solved,
-        totalProblems,
-        points,
-        streak: userRow.currentStreak ?? 0,
-        level: getLevel(points),
+        solvedProblems: standing.solvedCount,
+        points: standing.totalScore,
+        totalScore: standing.totalScore,
+        totalSubmissions: standing.totalSubmissions,
+        streak: standing.streak,
+        level: standing.level,
       },
     });
   } catch (err: unknown) {
     const e = err as { message?: string };
-    return res.status(500).json({ error: e.message ?? "Failed to fetch user" });
+    res.status(500).json({ error: e.message ?? "Failed to fetch user" });
   }
 });
 

@@ -8,6 +8,8 @@ export const userStatsTable = pgTable("user_stats", {
     .unique()
     .references(() => usersTable.id, { onDelete: "cascade" }),
   points: integer("points").notNull().default(0),
+  solvedCount: integer("solved_count").notNull().default(0),
+  totalSubmissions: integer("total_submissions").notNull().default(0),
   currentStreak: integer("current_streak").notNull().default(0),
   longestStreak: integer("longest_streak").notNull().default(0),
   lastActivityDate: date("last_activity_date"),

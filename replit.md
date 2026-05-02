@@ -43,7 +43,7 @@ All production-grade infrastructure is in `src/lib/` and `src/middleware/`:
 |---|---|
 | `src/lib/job-queue.ts` | Generic `JobQueue<T>` — async FIFO, retry (exp backoff), dead-letter, configurable concurrency |
 | `src/lib/submission-worker.ts` | Submission-specific queue singleton (concurrency=4). Processor: judge → update DB → record metrics → invalidate cache |
-| `src/lib/cache.ts` | In-process TTL cache with tag-based invalidation. TTLs: problems 120s, detail 300s, leaderboard 60s |
+| `src/lib/cache.ts` | In-process TTL cache with tag-based invalidation. TTLs: problems 120s, detail 300s, leaderboard 30s |
 | `src/lib/circuit-breaker.ts` | DB circuit breaker — opens after 5 failures, half-open after 10s |
 | `src/middleware/rate-limit.ts` | `authRateLimit` (20/15min), `submitRateLimit` (15/min, keyed by userId), `readRateLimit` (300/min) |
 
