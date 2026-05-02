@@ -25,7 +25,7 @@ const createProblemSchema = z.object({
 
 export async function getProblems(req: Request, res: Response) {
   const { level, category, difficulty, search } = req.query as Record<string, string | undefined>;
-  const userId = req.user?.sub;
+  const userId = req.dbUserId;
 
   const cacheKey = `problems:list:${userId ?? "anon"}:${level ?? ""}:${category ?? ""}:${difficulty ?? ""}:${search ?? ""}`;
   const cached = cache.get<unknown>(cacheKey);
@@ -53,7 +53,7 @@ export async function getProblem(req: Request, res: Response) {
     return;
   }
 
-  const userId = req.user?.sub;
+  const userId = req.dbUserId;
   const cacheKey = `problems:detail:${userId ?? "anon"}:${id}`;
   const cached = cache.get<unknown>(cacheKey);
   if (cached) {

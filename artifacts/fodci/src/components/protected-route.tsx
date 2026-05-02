@@ -1,23 +1,17 @@
-import { useEffect, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { useLocation } from "wouter"
-import { useAuth } from "@/hooks/use-auth"
+import { useUser } from "@clerk/react"
 
 interface ProtectedRouteProps {
   children: ReactNode
   redirectTo?: string
 }
 
-export function ProtectedRoute({ children, redirectTo = "/login" }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth()
+export function ProtectedRoute({ children, redirectTo = "/sign-in" }: ProtectedRouteProps) {
+  const { user, isLoaded } = useUser()
   const [, navigate] = useLocation()
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate(redirectTo)
-    }
-  }, [user, isLoading, navigate, redirectTo])
-
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -26,6 +20,7 @@ export function ProtectedRoute({ children, redirectTo = "/login" }: ProtectedRou
   }
 
   if (!user) {
+    navigate(redirectTo)
     return null
   }
 

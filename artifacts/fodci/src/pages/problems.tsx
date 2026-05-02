@@ -39,17 +39,13 @@ export default function ProblemsPage() {
       setLoading(true)
       setError(null)
       try {
-        const token = localStorage.getItem("fodci-token")
         const params = new URLSearchParams()
         if (searchTerm) params.set("search", searchTerm)
         if (selectedCategory !== "All") params.set("category", selectedCategory)
         if (selectedDifficulty !== "All") params.set("difficulty", selectedDifficulty)
         if (selectedLevel !== "All") params.set("level", selectedLevel)
 
-        const headers: Record<string, string> = {}
-        if (token) headers["Authorization"] = `Bearer ${token}`
-
-        const res = await fetch(`/api/problems?${params.toString()}`, { headers })
+        const res = await fetch(`/api/problems?${params.toString()}`, { credentials: "include" })
         if (!res.ok) throw new Error("Failed to load problems")
         const data = await res.json()
         setProblems(data.problems ?? [])

@@ -81,12 +81,10 @@ export function CodeEditor({ language, initialCode, problemId, onRun, onSubmit }
     setActiveTab("output")
     setRunOutput("Running...")
     try {
-      const token = localStorage.getItem("fodci-token")
-      const headers: Record<string, string> = { "Content-Type": "application/json" }
-      if (token) headers["Authorization"] = `Bearer ${token}`
       const response = await fetch("/api/code/run", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ code, language, problemId }),
       })
       const result = await response.json()
@@ -157,12 +155,10 @@ export function CodeEditor({ language, initialCode, problemId, onRun, onSubmit }
     setSubmitStatus("Submitting…")
 
     try {
-      const token = localStorage.getItem("fodci-token")
-      const headers: Record<string, string> = { "Content-Type": "application/json" }
-      if (token) headers["Authorization"] = `Bearer ${token}`
       const response = await fetch("/api/code/submit", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ code, language, problemId }),
       })
       const data = await response.json()

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
+import { resolveDbUser } from "../middleware/clerk-db-user.js";
 import { submitRateLimit } from "../middleware/rate-limit.js";
 import { executeCode } from "../lib/executor.js";
 import { createPendingSubmission } from "../services/submission.service.js";
@@ -47,7 +48,7 @@ router.post("/code/run", async (req, res) => {
   });
 });
 
-router.post("/code/submit", optionalAuth, submitRateLimit, async (req, res) => {
+router.post("/code/submit", optionalAuth, resolveDbUser, submitRateLimit, async (req, res) => {
   const { code, language, problemId } = req.body;
 
   if (!code || !language || !problemId) {
@@ -67,7 +68,7 @@ router.post("/code/submit", optionalAuth, submitRateLimit, async (req, res) => {
     return;
   }
 
-  const userId = req.user?.sub ?? null;
+  const userId = req.dbUserId ?? null;
 
   const submissionId = await createPendingSubmission({
     userId,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import { Navigation } from "@/components/navigation"
 import { PageContainer } from "@/components/page-container"
 import { ProtectedRoute } from "@/components/protected-route"
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAuth } from "@/hooks/use-auth"
+import { useUser } from "@clerk/react"
 import { Trophy, Target, Code, Calendar, CheckCircle, XCircle, Clock, Award, Star, Zap, Loader2 } from "lucide-react"
 
 interface UserStats {
@@ -51,7 +51,7 @@ interface ProfileData {
   recentAttempts: RecentAttempt[]
 }
 
-const ACHIEVEMENT_ICONS: Record<number, React.ReactNode> = {
+const ACHIEVEMENT_ICONS: Record<number, ReactNode> = {
   1: <Target className="h-6 w-6" />,
   2: <Code className="h-6 w-6" />,
   3: <Zap className="h-6 w-6" />,
@@ -70,7 +70,7 @@ const ACHIEVEMENT_COLORS: Record<number, string> = {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user } = useUser()
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -80,13 +80,8 @@ export default function ProfilePage() {
       setLoading(true)
       setError(null)
       try {
-        const token = localStorage.getItem("fodci-token")
-        if (!token) {
-          setLoading(false)
-          return
-        }
         const res = await fetch("/api/user/profile", {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
         })
         if (!res.ok) {
           if (res.status === 401) {
@@ -105,12 +100,20 @@ export default function ProfilePage() {
       }
     }
 
-    fetchProfile()
-  }, [])
+    if (user) {
+      fetchProfile()
+    } else {
+      setLoading(false)
+    }
+  }, [user])
 
   const stats = profile?.stats
   const achievements = profile?.achievements ?? []
   const recentAttempts = profile?.recentAttempts ?? []
+
+  const displayName = profile?.name || user?.fullName || user?.username || user?.primaryEmailAddress?.emailAddress?.split("@")[0] || "User"
+  const displayEmail = profile?.email || user?.primaryEmailAddress?.emailAddress || ""
+  const displayAvatar = profile?.avatar || user?.imageUrl || "/placeholder.svg"
 
   return (
     <ProtectedRoute>
@@ -134,12 +137,12 @@ export default function ProfilePage() {
                 <CardContent className="pt-6">
                   <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <Avatar className="h-24 w-24">
-                      <AvatarImage src={profile?.avatar || user?.avatar || "/placeholder.svg"} alt={profile?.name || user?.name} />
-                      <AvatarFallback className="text-2xl">{(profile?.name || user?.name)?.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={displayAvatar} alt={displayName} />
+                      <AvatarFallback className="text-2xl">{displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="text-center md:text-left flex-1">
-                      <h1 className="text-3xl font-bold text-foreground">{profile?.name || user?.name}</h1>
-                      <p className="text-muted-foreground">{profile?.email || user?.email}</p>
+                      <h1 className="text-3xl font-bold text-foreground">{displayName}</h1>
+                      <p className="text-muted-foreground">{displayEmail}</p>
                       <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
                         {stats && (
                           <>

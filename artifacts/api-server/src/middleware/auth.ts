@@ -1,68 +1,64 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-
-export interface AuthPayload {
-  sub: number;
-  username: string;
-  role: string;
-}
+import { getAuth } from "@clerk/express";
+import { eq } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: AuthPayload;
+      userId?: string;
+      user?: { sub: number; username: string; role: string };
     }
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "fodci-dev-secret-change-in-prod";
-
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Authorization header missing or malformed" });
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
     return;
   }
-
-  const token = authHeader.slice(7);
-
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
-    req.user = payload;
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid or expired token" });
-  }
+  req.userId = userId;
+  next();
 }
 
 export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-
-  if (authHeader?.startsWith("Bearer ")) {
-    try {
-      const payload = jwt.verify(authHeader.slice(7), JWT_SECRET) as AuthPayload;
-      req.user = payload;
-    } catch {
-      // ignore invalid tokens for optional auth
-    }
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (userId) {
+    req.userId = userId;
   }
-
   next();
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.user) {
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  const auth = getAuth(req);
+  const clerkUserId = auth?.userId;
+  if (!clerkUserId) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
-  if (req.user.role !== "admin") {
-    res.status(403).json({ error: "Admin access required" });
+
+  try {
+    const [user] = await db
+      .select({ role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.clerkId, clerkUserId))
+      .limit(1);
+
+    if (!user || user.role !== "admin") {
+      res.status(403).json({ error: "Admin access required" });
+      return;
+    }
+  } catch {
+    res.status(500).json({ error: "Failed to verify admin role" });
     return;
   }
+
   next();
 }
 
-export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+export function signToken(_payload: unknown): string {
+  throw new Error("signToken is no longer used — auth is handled by Clerk");
 }

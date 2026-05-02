@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
+import { resolveDbUser } from "../middleware/clerk-db-user.js";
 import { readRateLimit } from "../middleware/rate-limit.js";
 import {
   getLeaderboard,
@@ -56,8 +57,12 @@ router.get("/leaderboard", readRateLimit, async (req, res) => {
   }
 });
 
-router.get("/leaderboard/me", requireAuth, readRateLimit, async (req, res) => {
-  const userId = req.user!.sub;
+router.get("/leaderboard/me", requireAuth, resolveDbUser, readRateLimit, async (req, res) => {
+  const userId = req.dbUserId;
+  if (!userId) {
+    res.status(401).json({ error: "User not found in database" });
+    return;
+  }
 
   try {
     const standing = await findUserStanding(userId);

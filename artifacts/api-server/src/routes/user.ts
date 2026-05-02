@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { requireAuth, optionalAuth } from "../middleware/auth.js"
+import { resolveDbUser } from "../middleware/clerk-db-user.js"
 import { db, usersTable, submissionsTable, userStatsTable, problemsTable } from "@workspace/db"
 import { eq, sql, count, desc } from "drizzle-orm"
 
@@ -26,9 +27,12 @@ function computeAchievements(solvedCount: number, streak: number) {
   })
 }
 
-router.get("/user/profile", requireAuth, async (req, res) => {
+router.get("/user/profile", requireAuth, resolveDbUser, async (req, res) => {
   try {
-    const userId = req.user!.sub
+    const userId = req.dbUserId
+    if (!userId) {
+      return res.status(401).json({ error: "User not found in database" })
+    }
 
     const [userRow] = await db
       .select()

@@ -1,12 +1,10 @@
 import { Router } from "express";
-import { register, login, me } from "../controllers/auth.controller.js";
+import { me } from "../controllers/auth.controller.js";
 import { requireAuth } from "../middleware/auth.js";
-import { authRateLimit } from "../middleware/rate-limit.js";
+import { resolveDbUser } from "../middleware/clerk-db-user.js";
 
 const router = Router();
 
-router.post("/auth/register", authRateLimit, register);
-router.post("/auth/login", authRateLimit, login);
-router.get("/auth/me", requireAuth, me);
+router.get("/auth/me", requireAuth, resolveDbUser, me);
 
 export default router;

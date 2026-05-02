@@ -41,10 +41,7 @@ export default function ProblemDetailPage() {
       setLoading(true)
       setError(null)
       try {
-        const token = localStorage.getItem("fodci-token")
-        const headers: Record<string, string> = {}
-        if (token) headers["Authorization"] = `Bearer ${token}`
-        const res = await fetch(`/api/problems/${problemId}`, { headers })
+        const res = await fetch(`/api/problems/${problemId}`, { credentials: "include" })
         if (!res.ok) {
           if (res.status === 404) {
             setError("Problem not found")

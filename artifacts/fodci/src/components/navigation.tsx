@@ -1,10 +1,9 @@
-import { useState } from "react"
 import { Link, useLocation } from "wouter"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, LogIn, LogOut, Settings } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { useUser, useClerk } from "@clerk/react"
 
 const navigationItems = [
   { name: "Home", href: "/" },
@@ -14,13 +13,16 @@ const navigationItems = [
 ]
 
 export function Navigation() {
-  const { user, logout } = useAuth()
+  const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
   const [, navigate] = useLocation()
 
   const handleLogout = () => {
-    logout()
-    navigate("/")
+    signOut().then(() => navigate("/"))
   }
+
+  const displayName = user?.fullName || user?.username || user?.primaryEmailAddress?.emailAddress?.split("@")[0] || "User"
+  const avatarUrl = user?.imageUrl || "/placeholder.svg"
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -50,12 +52,12 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center space-x-3">
-          {user ? (
+          {!isLoaded ? null : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                    <AvatarImage src={avatarUrl} alt={displayName} />
                     <AvatarFallback>
                       <User className="h-4 w-4" />
                     </AvatarFallback>
@@ -82,13 +84,13 @@ export function Navigation() {
           ) : (
             <div className="flex items-center space-x-2">
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">
+                <Link href="/sign-in">
                   <LogIn className="mr-2 h-4 w-4" />
                   Login
                 </Link>
               </Button>
               <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-                <Link href="/signup">Sign Up</Link>
+                <Link href="/sign-up">Sign Up</Link>
               </Button>
             </div>
           )}
