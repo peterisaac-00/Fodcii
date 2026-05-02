@@ -1,0 +1,79 @@
+You are working inside the Fodci backend project (Node.js + Express + PostgreSQL, already includes Auth system, Judge engine, and Problem system).
+
+Your task is to implement two new production-grade modules:
+
+1) Observability System
+
+Build a full observability layer with the following:
+
+A. Logging System
+Structured JSON logs for all requests/responses
+Include: requestId, userId (if exists), endpoint, method, statusCode, latency, timestamp
+Central logger utility (winston or pino preferred)
+Error logs must include stack trace + context
+B. Metrics
+Track:
+total requests
+failed requests
+average response time
+submissions count
+Expose metrics endpoint:
+GET /api/metrics
+C. Request Tracing
+Add requestId middleware
+Propagate requestId across services (auth, problems, submissions, judge)
+Log request lifecycle end-to-end
+D. Health Checks
+GET /health
+Check:
+DB connection
+API uptime
+Judge engine status
+Return detailed JSON status
+2) Security Testing Module
+
+Build an internal security testing system for Fodci:
+
+A. Security Test Runner
+
+Create a service that runs automated security checks against API endpoints:
+
+Tests must include:
+
+SQL Injection test cases
+XSS payload detection
+Broken authentication attempts
+IDOR testing (unauthorized access attempts)
+Rate limit abuse simulation
+B. Security Report Generator
+Endpoint: GET /api/security/report
+Output:
+vulnerabilities found
+severity level (low/medium/high/critical)
+affected endpoints
+recommended fixes
+C. Attack Simulation Mode (SAFE ONLY)
+Do NOT execute real harmful actions
+Only simulate payload requests in controlled environment
+3) Engineering Requirements
+Must follow existing project architecture:
+services / controllers / routes pattern
+Must not break existing Auth / Judge / Problem system
+Use TypeScript (if already used in project)
+Clean separation of concerns
+4) GitHub Integration (Optional)
+
+If possible:
+
+Commit changes in logical commits:
+"feat: add observability system"
+"feat: add security testing module"
+Push to GitHub repository automatically
+If GitHub push is not possible, just prepare clean git commands and skip push safely
+Goal
+
+Transform Fodci into a production-ready backend with:
+
+full observability
+internal security testing layer
+scalable monitoring foundation

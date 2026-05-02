@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { optionalAuth } from "../middleware/auth.js";
 import { recordSubmission } from "../services/problems.service.js";
+import { metricsStore } from "../lib/metrics-store.js";
 
 const router = Router();
 
@@ -75,6 +76,7 @@ router.post("/code/submit", optionalAuth, async (req, res) => {
       totalTests,
       executionTime,
     });
+    metricsStore.recordSubmission();
   } catch {
     // non-fatal — still return result even if DB write fails
   }
