@@ -6,13 +6,15 @@
     "preinstall": "node -e \"const fs = require('fs'); try { fs.unlinkSync('package-lock.json'); } catch(e) {} try { fs.unlinkSync('yarn.lock'); } catch(e) {} const agent = process.env.npm_config_user_agent || ''; if (!agent.startsWith('pnpm/')) { console.error('Use pnpm instead'); process.exit(1); }\"",
     "dev": "pnpm --filter @workspace/fodci run dev",
     "api-dev": "pnpm --filter @workspace/api-server run dev",
+    "dev:all": "concurrently \"pnpm run dev\" \"pnpm run api-dev\"",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
   "devDependencies": {
-    "typescript": "~5.9.2",
-    "prettier": "^3.8.1"
+    "concurrently": "^9.2.1",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
   }
 }
